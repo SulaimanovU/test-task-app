@@ -1,4 +1,6 @@
 const { validationResult } = require('express-validator');
+const sequelize = require('../models/database');
+const { QueryTypes } = require('sequelize');
 const Device = require('../models/device');
 const User = require('../models/user');
 
@@ -41,14 +43,15 @@ exports.getDevice = async (req, res, next) => {
   const { params: { id } } = req;
   
   try {
-    const deviceInstance = await Device.findByPk(id);
+    const query = `
+      SELECT * FROM devices
+      INNER JOIN users
+      ON "userId" = users.id WHERE devices.id = ${id}
+    `
       
-    if(!deviceInstance){
-      throw new Error('Such device could not found.')
-    }
+    const result = await sequelize.query(query, { type: QueryTypes.SELECT })
 
-    const { name, email } = await deviceInstance.getUser();
-    const { mас, type } = deviceInstance;
+    const { name, email, mас, type } = result[0];
 
     res.status(200).json({ name, email, mас, type, id });
   }
